@@ -19,19 +19,23 @@ import matplotlib.pyplot as plt
 import sys
 import glob
 import os
+import random
+import json
 
-folders = os.listdir('LibriSpeech\\dev-clean')
+path = 'LibriSpeech\\dev-clean'
+folders = os.listdir(path)
 
 maxi = float(0)
+json_data = []
 
 for folder in folders:
     print(folder)
-    files = os.listdir('LibriSpeech\dev-clean\\' +folder)
-    print(files)
-    for audioFile in files:
-        print(audioFile)
-        flacFiles = glob.glob('LibriSpeech\dev-clean\\' + folder + '\\'+ audioFile + "\\*.flac")
-        transctipt = glob.glob('LibriSpeech\dev-clean\\' + folder + '\\'+ audioFile + "\\*.txt")
+    subfolders = os.listdir(path + '\\' +folder)
+    print(subfolders)
+    for subfolder in subfolders:
+        print(subfolders)
+        flacFiles = glob.glob(path + '\\' + folder + '\\'+ subfolder + "\\*.flac")
+        transctipt = glob.glob(path + '\\' + folder + '\\'+ subfolder + "\\*.txt")
         with open(transctipt[0] , 'r') as script:
             content = script.read().lower()
         
@@ -41,15 +45,17 @@ for folder in folders:
             # print(file_name)
             data, samplerate = sf.read(flac)
             maxi = max(maxi,data.shape[0]/samplerate)
-            # freq, time, Sxx = signal.spectrogram(data, samplerate, scaling='spectrum')
-            # plt.pcolormesh(time, freq, Sxx)
-            # Pxx, freqs, bins, im = plt.specgram(data, Fs=samplerate)
-            
             text = content.split('\n')[i].split(file_name)[1]
-            
+            text = text.strip()
+            json_data.append(
+                { "key" : "dest_wav_file" + '\\' + file_name + ".wav",
+                    "text" : text
+                }
+            )
 
-print(maxi)
-# with open('8842-302196.trans.txt') as f:
-#     content = f.read()
+# print(maxi)
 
-# print(content.split('8842-302196-0000')[1])
+random.shuffle(data) 
+print("creating Json file !!!")
+
+save_path = 
