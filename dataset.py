@@ -49,5 +49,38 @@ class Data(Dataset):
 
         return spectrogram,label,spectrogram_len,label_len
 
-    
-        
+
+def Padding(data):
+    "Here we will pad the data to make same batch size"
+
+    spectrograms  = []
+    labels = []
+    spec_lengths = []
+    label_lengths = []
+
+
+    """
+    we have shape of spectrograms = [1,128,x]
+    now this x can vary in corresponding to the length of audio input, so in order to have batches of same size we will use rnn.pad_sequence
+
+    in order to use pad_sequence the last dimension of all the elements should be same.
+
+    so, we will take 128 to last dim by firstly squeezing and then transposing the sequence.
+    so shape of all the spectrograms will becom [x,128]
+    now we will pad these spectrograms and keep batchfirst= True
+    we will also unsqueeze the spectrograms after the padding and to take back the spectrograms to there original shape we will again transpose them
+    shape after paddding(without unsqueeze and transpose) -> [batch,y,128]  y -> max of all the x's (decided by the rnn.pad_sequence funciton)
+    shape after paddding(with unsqueeze and transpose) -> [batch,1,128,y], which is the original shape of spectrogram
+
+    """
+    for (spectrogram,label, spec_length,label_length) in data:
+        spectrograms.append(spectrogram.squeeze(0).traspose(0,1))
+        labels.append(torch.Tensor(label))
+        spec_lengths.append(spec_length)
+        label_lengths.append(label_length)
+
+    spectrograms = nn.utils.rnn.pad_sequence(spectrograms,batch_first=True).transpose(1,2).unsqueeze(1)
+    labels = nn.utils.rnn.pad_sequence(labels,batch_first= True)
+
+    return spectrograms, labels,spec_lengths,label_lengths
+
