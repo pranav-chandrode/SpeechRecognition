@@ -58,4 +58,4 @@ for folder in folders:
 random.shuffle(data) 
 print("creating Json file !!!")
 
-save_path = 
+# save_path = 
