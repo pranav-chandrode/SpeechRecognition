@@ -40,7 +40,7 @@ class Data(Dataset):
             index = index.item()
         
         audioFilePath = self.data.key.iloc[index]
-        label = self.textProcessor(self.data.text.iloc[index])
+        label = self.textProcessor.chat_to_ind(self.data.text.iloc[index])
 
         waveform, _ = torchaudio.load(audioFilePath)
         spectrogram = self.audioTransform(waveform)
