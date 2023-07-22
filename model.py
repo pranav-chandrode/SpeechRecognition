@@ -5,14 +5,16 @@ import torch.nn.functional as F
 
 class SpeechModel(nn.Module):
     hyper_parameters = {
-        'input_channel' : 128,
         'num_classes' : 2,
+        'hidden_size' : 1024,
         'num_layers' : 2,
-        'hidden_size' : 1024
+        'input_channel' : 128,
+        'dropout' : 0.1,
+        'batch_size' : 32
     }
-    def __init__(self,num_classes,hidden_size,num_layers,input_channel,dropout):
+    def __init__(self,num_classes,hidden_size,num_layers,input_channel,dropout,batch_size): 
         super(SpeechModel,self).__init__()
-        """the input size pf MelSpectrogram is [B,128,y]
+        """the input size of MelSpectrogram is [B,128,y]
            therefore, input channnel  = 128 and we will be keeping output channle 
            also 128 """
         self.cnn = nn.Conv1d(input_channel,input_channel,kernel_size=2)
@@ -32,7 +34,7 @@ class SpeechModel(nn.Module):
                                    )
 
         self.lstm = nn.LSTM(input_size = 128, hidden_size = hidden_size,num_layers = num_layers,batch_first = True, bidirectional = True)
-        self.layerNorm = F.gelu(nn.LayerNorm(hidden_size))
+        self.layerNorm = nn.LayerNorm(hidden_size)
         self.dense2 = nn.Sequential(
                                     nn.Linear(hidden_size,64),
                                     nn.LayerNorm(64),

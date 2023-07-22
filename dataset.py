@@ -5,6 +5,9 @@ from torch.utils.data import Dataset
 from utils import TextProcess
 import pandas as pd
 
+sample_rate = 16000
+freq_mask = 15
+time_mask = 80
 
 class SpecAugment(nn.Module):
     def __init__(self,time_mask,freq_mask):
@@ -18,13 +21,18 @@ class SpecAugment(nn.Module):
 class LogMelSpec(nn.Module):
     def __init__(self,sample_rate):
         super(LogMelSpec,self).__init__()
-        self.transform = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate)
+        self.transform = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,win_length=160,hop_length=80)
 
     def forward(self,x):
         x = self.transform(x)
         return x
 
 class Data(Dataset):
+    data_hparams = {
+        'sample_rate' : sample_rate,
+        'time_mask' : time_mask,
+        'freq_mask' : freq_mask
+    }
     def __init__(self,json_file,sample_rate,time_mask,freq_mask):
         self.data = pd.read_json(json_file)
         self.audioTransform = nn.Sequential(SpecAugment(time_mask= time_mask,freq_mask=freq_mask),
@@ -51,7 +59,7 @@ class Data(Dataset):
 
 
 def Padding(data):
-    "Here we will pad the data to make same batch size"
+    "This function we will pad the data to make same batch size"
 
     spectrograms  = []
     labels = []
