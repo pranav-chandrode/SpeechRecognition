@@ -43,8 +43,8 @@ class TextProcess:
         int_sequence = []
         for ch in text:
             if ch == ' ':
-                int_sequence.append(self.chat_to_ind["<SPACE>"])
-            else: int_sequence.append(self.chat_to_ind[ch])
+                int_sequence.append(int(self.chat_to_ind["<SPACE>"]))
+            else: int_sequence.append(int(self.chat_to_ind[ch]))
         
         return int_sequence
     

@@ -21,7 +21,7 @@ class SpecAugment(nn.Module):
 class LogMelSpec(nn.Module):
     def __init__(self,sample_rate):
         super(LogMelSpec,self).__init__()
-        self.transform = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,win_length=160,hop_length=80)
+        self.transform = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,win_length=160,hop_length=80,n_mels = 64)
 
     def forward(self,x):
         x = self.transform(x)
@@ -40,15 +40,15 @@ class Data(Dataset):
         
         self.textProcessor = TextProcess()
 
-    def __len__(data):
-        return len(data)
+    def __len__(self):
+        return len(self.data)
     
     def __getitem__(self, index):
         if torch.is_tensor(index):
             index = index.item()
         
         audioFilePath = self.data.key.iloc[index]
-        label = self.textProcessor.chat_to_ind(self.data.text.iloc[index])
+        label = self.textProcessor.text_to_int(self.data.text.iloc[index])
 
         waveform, _ = torchaudio.load(audioFilePath)
         spectrogram = self.audioTransform(waveform)
@@ -68,21 +68,21 @@ def Padding(data):
 
 
     """
-    we have shape of spectrograms = [1,128,x]
+    we have shape of spectrograms = [1,64,x]
     now this x can vary in corresponding to the length of audio input, so in order to have batches of same size we will use rnn.pad_sequence
 
     in order to use pad_sequence the last dimension of all the elements should be same.
 
-    so, we will take 128 to last dim by firstly squeezing and then transposing the sequence.
-    so shape of all the spectrograms will becom [x,128]
+    so, we will take 64 to last dim by firstly squeezing and then transposing the sequence.
+    so shape of all the spectrograms will becom [x,64]
     now we will pad these spectrograms and keep batchfirst= True
     we will also unsqueeze the spectrograms after the padding and to take back the spectrograms to there original shape we will again transpose them
-    shape after paddding(without unsqueeze and transpose) -> [batch,y,128]  y -> max of all the x's (decided by the rnn.pad_sequence funciton)
-    shape after paddding(with unsqueeze and transpose) -> [batch,1,128,y], which is the original shape of spectrogram
+    shape after paddding(without unsqueeze and transpose) -> [batch,y,64]  y -> max of all the x's (decided by the rnn.pad_sequence funciton)
+    shape after paddding(with unsqueeze and transpose) -> [batch,1,64,y], which is the original shape of spectrogram
 
     """
     for (spectrogram,label, spec_length,label_length) in data:
-        spectrograms.append(spectrogram.squeeze(0).traspose(0,1))
+        spectrograms.append(spectrogram.squeeze(0).transpose(0,1))
         labels.append(torch.Tensor(label))
         spec_lengths.append(spec_length)
         label_lengths.append(label_length)

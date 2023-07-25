@@ -19,7 +19,7 @@ hyper_parameters = {
     'num_classes' : 2,
     'num_layers' : 2,
     'hidden_size' : 1024,
-    'batch_size' : 16,
+    'batch_size' : 128,
     'epochs' : 10,
     'learning_rate' : 0.0001
 }
@@ -28,7 +28,7 @@ class Speech(LightningModule):
     def __init__(self,model,args):
         super(Speech,self).__init__()
         self.model = model
-        self.criterion = nn.CTCLoss()
+        self.criterion = nn.CTCLoss(blank=26,zero_infinity= True)
         self.args = args
 
     def forward(self,x,hidden):
@@ -38,11 +38,11 @@ class Speech(LightningModule):
         self.optimizer = Adam(self.model.parameters() ,lr= hyper_parameters['learning_rate'])
         # self.scheduler = lr_scheduler.ReduceLROnPlateau(self.optimizer,mode = 'min',patience=6,factor=0.5)
 
-        # return [self.optimizer], [self.schedular]
-        return {'optimizer' : self.optimizer, 
-                # 'scheduler' : self.scheduler,
-                # 'monitor': 'val_loss'
-                }
+        return [self.optimizer]
+        # return {'optimizer' : self.optimizer, 
+        #         # 'scheduler' : self.scheduler,
+        #         # 'monitor': 'val_loss'
+        #         }
     
     def train_dataloader(self):
         d_params = Data.data_hparams
@@ -54,13 +54,17 @@ class Speech(LightningModule):
     def training_step(self,batch,batch_idx):
         spectrograms , lables, spec_len , label_len = batch
         batch_size = spectrograms.shape[0]
-        h0, c0 = SpeechModel.hidden_initialize(batch_size)
-        output, _ ,_ = self.model(spectrograms,(h0,c0))
+        # h0, c0 = SpeechModel.hidden_initialize(batch_size)
+        h0, c0 = self.model.hidden_initialize(batch_size)
+        output, _ = self(spectrograms,(h0,c0))
+        output = output.unsqueeze(1)
         output = F.log_softmax(output,dim= 2)
         loss = self.criterion(output,lables,spec_len,label_len)
         
-        logs = {'loss': loss , 'lr' : self.optimizer.param_groups[0]['lr']}
-        return {'loss': loss, 'logs' : logs}
+        # logs = {'loss': loss , 'lr' : self.optimizer.param_groups[0]['lr']}
+        # logs = {'loss': loss}
+        # return {'loss': loss, 'logs' : logs}
+        return loss
 
 
     def val_dataloader(self):
@@ -73,8 +77,10 @@ class Speech(LightningModule):
     def validation_step(self,batch,batch_idx):
         spectrograms , lables, spec_len , label_len = batch
         batch_size = spectrograms.shape[0]
-        h0, c0 = SpeechModel.hidden_initialize(batch_size)
-        output, _ ,_ = self.model(spectrograms,(h0,c0))
+        # h0, c0 = SpeechModel.hidden_initialize(batch_size)
+        h0, c0 = self.model.hidden_initialize(batch_size)
+        output, _ = self(spectrograms,(h0,c0))
+        output = output.unsqueeze(1)
         output = F.log_softmax(output,dim= 2)
         loss = self.criterion(output,lables,spec_len,label_len)
         
@@ -93,7 +99,7 @@ def main(args):
     logger = TensorBoardLogger(save_dir=args.logger_dir, name= "Speech_loggs")
 
     speech_module = Speech(model,args)
-    trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,fast_dev_run = True)
+    trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,fast_dev_run = False)
     trainer.fit(speech_module)
 
 def checkpoint_callback(args):
