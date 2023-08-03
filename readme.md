@@ -1,1 +1,1 @@
-This is a work in progress reposetory
+This is a work in progress repository
