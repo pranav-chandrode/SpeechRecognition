@@ -19,7 +19,7 @@ hyper_parameters = {
     'num_classes' : 2,
     'num_layers' : 2,
     'hidden_size' : 1024,
-    'batch_size' : 128,
+    'batch_size' : 64,
     'epochs' : 10,
     'learning_rate' : 0.0001
 }
@@ -28,7 +28,7 @@ class Speech(LightningModule):
     def __init__(self,model,args):
         super(Speech,self).__init__()
         self.model = model
-        self.criterion = nn.CTCLoss(blank=26,zero_infinity= True)
+        self.criterion = nn.CTCLoss(blank= 28,zero_infinity= True)
         self.args = args
 
     def forward(self,x,hidden):
@@ -51,21 +51,28 @@ class Speech(LightningModule):
         return DataLoader(dataset= train_dataset,batch_size= hyper_parameters['batch_size'],
                           shuffle=True,collate_fn=Padding)
     
-    def training_step(self,batch,batch_idx):
+    def step(self,batch):
         spectrograms , lables, spec_len , label_len = batch
         batch_size = spectrograms.shape[0]
-        # h0, c0 = SpeechModel.hidden_initialize(batch_size)
+        spec_len = torch.tensor(spec_len,dtype=torch.long)
+        label_len = torch.tensor(label_len,dtype=torch.long)
         h0, c0 = self.model.hidden_initialize(batch_size)
+        # h0, c0 = SpeechModel.hidden_initialize(batch_size)
         output, _ = self(spectrograms,(h0,c0))
-        output = output.unsqueeze(1)
+        # output = output.unsqueeze(1)
         output = F.log_softmax(output,dim= 2)
+        # print(f"spec_len = {spec_len}")
+        # print(f"spec_len shape = {spec_len.shape}")
         loss = self.criterion(output,lables,spec_len,label_len)
         
         # logs = {'loss': loss , 'lr' : self.optimizer.param_groups[0]['lr']}
         # logs = {'loss': loss}
         # return {'loss': loss, 'logs' : logs}
         return loss
-
+    
+    def training_step(self,batch,batch_idx):
+        loss = self.step(batch)
+        return {'loss' :loss }
 
     def val_dataloader(self):
         d_params = Data.data_hparams
@@ -75,19 +82,12 @@ class Speech(LightningModule):
                           shuffle=False,collate_fn=Padding)
 
     def validation_step(self,batch,batch_idx):
-        spectrograms , lables, spec_len , label_len = batch
-        batch_size = spectrograms.shape[0]
-        # h0, c0 = SpeechModel.hidden_initialize(batch_size)
-        h0, c0 = self.model.hidden_initialize(batch_size)
-        output, _ = self(spectrograms,(h0,c0))
-        output = output.unsqueeze(1)
-        output = F.log_softmax(output,dim= 2)
-        loss = self.criterion(output,lables,spec_len,label_len)
+        loss = self.step(batch)
+        return {"val_loss" : loss}
         
-        return {'val_loss': loss}
     
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack(x['val_loss'] for x in outputs).mean()
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         tensorboard_logs = {'val_loss' : avg_loss}
         return {'val_loss' : avg_loss, 'logs' : tensorboard_logs}
     
@@ -99,7 +99,7 @@ def main(args):
     logger = TensorBoardLogger(save_dir=args.logger_dir, name= "Speech_loggs")
 
     speech_module = Speech(model,args)
-    trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,fast_dev_run = False)
+    trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,fast_dev_run = True)
     trainer.fit(speech_module)
 
 def checkpoint_callback(args):
@@ -121,4 +121,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-

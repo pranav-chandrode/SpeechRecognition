@@ -4,6 +4,7 @@ import torchaudio
 from torch.utils.data import Dataset
 from utils import TextProcess
 import pandas as pd
+from AudioTransform import AduoUtil
 
 sample_rate = 16000
 freq_mask = 15
@@ -37,7 +38,7 @@ class Data(Dataset):
         self.data = pd.read_json(json_file)
         self.audioTransform = nn.Sequential(SpecAugment(time_mask= time_mask,freq_mask=freq_mask),
                                             LogMelSpec(sample_rate=sample_rate))
-        
+        self.AudioPreProcessor = AduoUtil()
         self.textProcessor = TextProcess()
 
     def __len__(self):
@@ -50,9 +51,15 @@ class Data(Dataset):
         audioFilePath = self.data.key.iloc[index]
         label = self.textProcessor.text_to_int(self.data.text.iloc[index])
 
-        waveform, _ = torchaudio.load(audioFilePath)
+        # waveform, _ = torchaudio.load(audioFilePath)
+        waveform, _ = self.AudioPreProcessor.openAudioFile(audioFilePath)
+        
+        waveform = self.AudioPreProcessor.trunc(wave= waveform)
+        waveform = self.AudioPreProcessor.padder(wave= waveform)
+
         spectrogram = self.audioTransform(waveform)
-        spectrogram_len = spectrogram.shape[-1]//2
+        # spectrogram_len = spectrogram.shape[-1]//2
+        spectrogram_len = (spectrogram.shape[1],)
         label_len = len(label)
 
         return spectrogram,label,spectrogram_len,label_len

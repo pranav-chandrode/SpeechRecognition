@@ -29,10 +29,10 @@ class AduoUtil():
 
 
 if __name__ == "__main__":
-    audiofilepath = 'dest_wav_file\84-121123-0000.wav'
+    audiofilepath = 'dest_wav_file\84-121123-0001.wav'
 
 
-    audioProcessor = AduoUtil
+    audioProcessor = AduoUtil()
     wave , sample_rate = audioProcessor.openAudioFile(audiofilepath)
     print("initial shape : ",wave.shape)
 
