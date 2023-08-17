@@ -36,13 +36,13 @@ class Speech(LightningModule):
     
     def configure_optimizers(self):
         self.optimizer = Adam(self.model.parameters() ,lr= hyper_parameters['learning_rate'])
-        # self.scheduler = lr_scheduler.ReduceLROnPlateau(self.optimizer,mode = 'min',patience=6,factor=0.5)
+        self.scheduler = lr_scheduler.ReduceLROnPlateau(self.optimizer,mode = 'min',patience=6,factor=0.5)
 
-        return [self.optimizer]
-        # return {'optimizer' : self.optimizer, 
-        #         # 'scheduler' : self.scheduler,
-        #         # 'monitor': 'val_loss'
-        #         }
+        # return [self.optimizer], [self.scheduler]
+        return {'optimizer' : self.optimizer, 
+                'scheduler' : self.scheduler,
+                'monitor': 'val_loss'
+                }
     
     def train_dataloader(self):
         d_params = Data.data_hparams
@@ -57,7 +57,6 @@ class Speech(LightningModule):
         spec_len = torch.tensor(spec_len,dtype=torch.long)
         label_len = torch.tensor(label_len,dtype=torch.long)
         h0, c0 = self.model.hidden_initialize(batch_size)
-        # h0, c0 = SpeechModel.hidden_initialize(batch_size)
         output, _ = self(spectrograms,(h0,c0))
         # output = output.unsqueeze(1)
         output = F.log_softmax(output,dim= 2)
@@ -65,14 +64,13 @@ class Speech(LightningModule):
         # print(f"spec_len shape = {spec_len.shape}")
         loss = self.criterion(output,lables,spec_len,label_len)
         
-        # logs = {'loss': loss , 'lr' : self.optimizer.param_groups[0]['lr']}
-        # logs = {'loss': loss}
-        # return {'loss': loss, 'logs' : logs}
         return loss
     
     def training_step(self,batch,batch_idx):
         loss = self.step(batch)
-        return {'loss' :loss }
+        logs = {'loss': loss , 'lr' : self.optimizer.param_groups[0]['lr']}
+        return {'loss': loss, 'logs' : logs}
+        # return {'loss' :loss }
 
     def val_dataloader(self):
         d_params = Data.data_hparams
@@ -88,9 +86,21 @@ class Speech(LightningModule):
     
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        self.scheduler.step(avg_loss)
         tensorboard_logs = {'val_loss' : avg_loss}
         return {'val_loss' : avg_loss, 'logs' : tensorboard_logs}
     
+
+
+def checkpoint_callback(args):
+    return ModelCheckpoint(
+        dirpath=args.save_model_path,
+        save_top_k=True,
+        verbose=True,
+        monitor='val_loss',
+        mode='min',
+        
+    )
 
 def main(args):
     h_params = SpeechModel.hyper_parameters
@@ -99,18 +109,8 @@ def main(args):
     logger = TensorBoardLogger(save_dir=args.logger_dir, name= "Speech_loggs")
 
     speech_module = Speech(model,args)
-    trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,fast_dev_run = True)
+    trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,checkpoint_callback = checkpoint_callback(args),fast_dev_run = True)
     trainer.fit(speech_module)
-
-def checkpoint_callback(args):
-    return ModelCheckpoint(
-        filepath=args.save_model_path,
-        save_top_k=True,
-        verbose=True,
-        monitor='val_loss',
-        mode='min',
-        prefix=''
-    )
 
 if __name__ == "__main__":
     parser = ArgumentParser()
