@@ -59,7 +59,8 @@ class Data(Dataset):
 
         spectrogram = self.audioTransform(waveform)
         # spectrogram_len = spectrogram.shape[-1]//2
-        spectrogram_len = (spectrogram.shape[1],)
+        # spectrogram_len = (spectrogram.shape[1],)
+        spectrogram_len = (64,)
         label_len = len(label)
 
         return spectrogram,label,spectrogram_len,label_len

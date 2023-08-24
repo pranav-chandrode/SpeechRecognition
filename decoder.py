@@ -5,9 +5,9 @@ import torch
 textprocess = TextProcess()
 
 labels = [
-    "'",  # 0
-    " ",  # 1
-    "a",  # 2
+    "'",  
+    " ",  
+    "a",  
     "b",
     "c",
     "d",

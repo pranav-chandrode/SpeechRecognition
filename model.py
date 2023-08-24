@@ -22,7 +22,7 @@ class SpeechModel(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.cnn = nn.Conv1d(input_channel,input_channel,kernel_size=5,stride= 5, padding= 10//2)
-        # self.pool1 = nn.MaxPool1d(5,5)
+        
         
         # self.dense = nn.Sequential(
         #                             nn.Linear(1202,256),  # 1202 is cacluated value after the CNN layer

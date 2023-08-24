@@ -20,7 +20,7 @@ hyper_parameters = {
     'num_layers' : 2,
     'hidden_size' : 1024,
     'batch_size' : 64,
-    'epochs' : 10,
+    'epochs' : 2,
     'learning_rate' : 0.0001
 }
 
@@ -49,9 +49,9 @@ class Speech(LightningModule):
 
         train_dataset = Data(self.args.train_file, **d_params)
         return DataLoader(dataset= train_dataset,batch_size= hyper_parameters['batch_size'],
-                          shuffle=True,collate_fn=Padding)
+                          shuffle=True,collate_fn=Padding,num_workers=4)
     
-    def step(self,batch):
+    def step1(self,batch):
         spectrograms , lables, spec_len , label_len = batch
         batch_size = spectrograms.shape[0]
         spec_len = torch.tensor(spec_len,dtype=torch.long)
@@ -62,12 +62,13 @@ class Speech(LightningModule):
         output = F.log_softmax(output,dim= 2)
         # print(f"spec_len = {spec_len}")
         # print(f"spec_len shape = {spec_len.shape}")
+        # print(f"spec len = {spec_len}")
         loss = self.criterion(output,lables,spec_len,label_len)
         
         return loss
     
     def training_step(self,batch,batch_idx):
-        loss = self.step(batch)
+        loss = self.step1(batch)
         logs = {'loss': loss , 'lr' : self.optimizer.param_groups[0]['lr']}
         return {'loss': loss, 'logs' : logs}
         # return {'loss' :loss }
@@ -77,16 +78,17 @@ class Speech(LightningModule):
 
         val_dataset = Data(self.args.val_file, **d_params)
         return DataLoader(dataset= val_dataset,batch_size= hyper_parameters['batch_size'],
-                          shuffle=False,collate_fn=Padding)
+                          shuffle=False,collate_fn=Padding,num_workers=4)
 
     def validation_step(self,batch,batch_idx):
-        loss = self.step(batch)
+        loss = self.step1(batch)
         return {"val_loss" : loss}
         
     
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        self.scheduler.step(avg_loss)
+        # self.scheduler.step(avg_loss)
+        # self.scheduler.step(metrics=avg_loss,epoch=1)
         tensorboard_logs = {'val_loss' : avg_loss}
         return {'val_loss' : avg_loss, 'logs' : tensorboard_logs}
     
@@ -94,12 +96,12 @@ class Speech(LightningModule):
 
 def checkpoint_callback(args):
     return ModelCheckpoint(
-        dirpath=args.save_model_path,
+        # dirpath=args.save_model_path,
+        dirpath=r'speech_logger\\Speech_loggs\\version_8\\checkpoints',
         save_top_k=True,
         verbose=True,
         monitor='val_loss',
         mode='min',
-        
     )
 
 def main(args):
@@ -109,8 +111,35 @@ def main(args):
     logger = TensorBoardLogger(save_dir=args.logger_dir, name= "Speech_loggs")
 
     speech_module = Speech(model,args)
-    trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,checkpoint_callback = checkpoint_callback(args),fast_dev_run = True)
+    trainer = Trainer(max_epochs = 2,log_every_n_steps=1,gpus = 0,logger = logger,checkpoint_callback = checkpoint_callback(args),fast_dev_run = False)
+    
+    
+    # d_params = Data.data_hparams
+    # val_dataset = Data('save_json/test.json',**d_params)
+    # val_dataloader = DataLoader(dataset= val_dataset,batch_size= hyper_parameters['batch_size'],
+    #                       shuffle=False,collate_fn=Padding,num_workers=4)
+    # trainer = Trainer()
+    # trainer.validate(speech_module,dataloaders=val_dataloader)
+    
+    # trainer = Trainer(max_epochs = hyper_parameters['epochs'],gpus = 0,logger = logger,checkpoint_callback = checkpoint_callback(args),fast_dev_run = False)
+    
+    
     trainer.fit(speech_module)
+
+    # checkpoint_path = checkpoint_callback(args).kth_best_model_path
+
+    # checkpoint_path = r"speech_logger\\Speech_loggs\\version_8\\checkpoints\\epoch=1-step=75.ckpt"
+    # print(f"checkpoint_path = {checkpoint_path}")
+    
+    # model_state_dict = torch.load(checkpoint_path)['state_dict']
+    # # print(model_state_dict)
+
+    # scripted_model = torch.jit.script(model_state_dict)
+    # # print(scripted_model)
+    # save_scripted_model_path  = 'saved_model/scripted_model.pt'
+    # # scripted_model.save(save_scripted_model_path)
+    # torch.save(scripted_model,save_scripted_model_path)
+    # torch.jit.save(scripted_model,'saved_model/scripted_model.pt')
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -121,3 +150,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
+# python trainer.py --train_file save_jsos/train.py --val_file save_json/test.py --logger_dir speech_logger --save_model_path saved_model
