@@ -39,7 +39,7 @@ labels = [
 class CTCBeamDecoder:
 
     def __init__(self, beam_size=100, blank_id=labels.index('_'), kenlm_path=None):
-        print("loading beam search with lm...")
+        print("loading beam search with Language model...")
         self.decoder = ctcdecode.CTCBeamDecoder(
             labels, alpha=0.522729216841, beta=0.96506699808,
             beam_width=beam_size, blank_id=labels.index('_'),

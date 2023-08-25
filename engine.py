@@ -2,6 +2,10 @@ import torch
 from model import SpeechModel
 from dataset import Data, Padding
 from torch.utils.data import DataLoader
+from decoder import CTCBeamDecoder
+import pyaudio    # conda install -c anaconda pyaudio -> used this to install pyaudion
+import time
+import threading
 
 h_param = SpeechModel.hyper_parameters
 
@@ -14,7 +18,27 @@ Testmodel.load_state_dict(model_state_dict,strict=False)
 # solutions :- https://discuss.pytorch.org/t/solved-keyerror-unexpected-key-module-encoder-embedding-weight-in-state-dict/1686/13 
 Testmodel.eval()
 
+class Listen():
+    def __init__(self,sample_rate = 16000,record_time = 2):
+        self.sample_rate = sample_rate
+        self.record_time = record_time
+        self.reciever = pyaudio.PyAudio()
+        self.CHUNK = 1024
+        self.channels = 1
+        self.stream = self.reciever.open(format= pyaudio.paInt16, rate= self.sample_rate,channels=self.channels,
+                                         input=True,output= True, frames_per_buffer=self.CHUNK)
 
+    
+    def reader(self,frames):
+        while True:
+            data = self.stream.read(self.CHUNK,exception_on_overflow=False)
+            frames.append(data)
+            time.sleep(0.01)
+        
+    def run(self,frame):
+        thread = threading.Thread(target=self.reader, args=(frame,),daemon=True)
+        thread.start()
+        print("Listnign Speech!!!\n")
 
 
 
