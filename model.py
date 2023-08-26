@@ -10,7 +10,7 @@ class SpeechModel(nn.Module):
         'num_layers' : 2,
         'input_channel' : 64,
         'dropout' : 0.1,
-        'batch_size' : 128
+        'batch_size' : 64
     }
     def __init__(self,num_classes,hidden_size,num_layers,input_channel,dropout,batch_size): 
         super(SpeechModel,self).__init__()
@@ -22,6 +22,7 @@ class SpeechModel(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.cnn = nn.Conv1d(input_channel,input_channel,kernel_size=5,stride= 5, padding= 10//2)
+        # self.cnn = nn.Conv1d(input_channel,input_channel,10,2, padding= 10//2)
         
         
         # self.dense = nn.Sequential(
@@ -80,8 +81,9 @@ class SpeechModel(nn.Module):
 
     def forward(self,x,hidden):
         """Input size was [batch,1,64,6001] so we have squeeze this"""
-        x = x.squeeze()              # [batch,64,6001]
-        x = F.gelu(self.cnn(x))      # [batch,64,1202]
+        x = x.squeeze(1)              # [batch,64,6001]
+        x = F.gelu(self.cnn(x))
+        print(f"shape after cnn = {x.shape}")      # [batch,64,1202]
         # x = x.view(x.size(0),-1)
         # x = torch.max(x, dim=2)[0]
         x = F.gelu(self.dense(x))    # [batch, 64,64] 

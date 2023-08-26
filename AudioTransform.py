@@ -1,7 +1,7 @@
 import torch
 import torchaudio
 
-class AduoUtil():
+class AudioUtil():
     """Pre-process the audio data and make it audio of equal duaration by trucation and padding"""
     @staticmethod
     def openAudioFile(audioFilePath):
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     audiofilepath = 'dest_wav_file\84-121123-0001.wav'
 
 
-    audioProcessor = AduoUtil()
+    audioProcessor = AudioUtil()
     wave , sample_rate = audioProcessor.openAudioFile(audiofilepath)
     print("initial shape : ",wave.shape)
 

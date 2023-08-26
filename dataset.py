@@ -4,7 +4,8 @@ import torchaudio
 from torch.utils.data import Dataset
 from utils import TextProcess
 import pandas as pd
-from AudioTransform import AduoUtil
+import numpy as np
+from AudioTransform import AudioUtil
 
 sample_rate = 16000
 freq_mask = 15
@@ -26,7 +27,12 @@ class LogMelSpec(nn.Module):
 
     def forward(self,x):
         x = self.transform(x)
+        x = np.log(x + 1e-14)
         return x
+
+def createMelSpec(sample_rate):
+    return LogMelSpec(sample_rate=sample_rate)
+
 
 class Data(Dataset):
     data_hparams = {
@@ -38,7 +44,7 @@ class Data(Dataset):
         self.data = pd.read_json(json_file)
         self.audioTransform = nn.Sequential(SpecAugment(time_mask= time_mask,freq_mask=freq_mask),
                                             LogMelSpec(sample_rate=sample_rate))
-        self.AudioPreProcessor = AduoUtil()
+        self.AudioPreProcessor = AudioUtil()
         self.textProcessor = TextProcess()
 
     def __len__(self):
@@ -59,8 +65,9 @@ class Data(Dataset):
 
         spectrogram = self.audioTransform(waveform)
         # spectrogram_len = spectrogram.shape[-1]//2
-        # spectrogram_len = (spectrogram.shape[1],)
-        spectrogram_len = (64,)
+        # spectrogram_len = (spectrogram.shape[0],)
+        # spectrogram_len = (64,)
+        spectrogram_len = (1,)
         label_len = len(label)
 
         return spectrogram,label,spectrogram_len,label_len
