@@ -10,3 +10,4 @@ kk.py
 ok.ipynb
 extra_15_wav_files.txt
 lightning_logs
+__pycache__

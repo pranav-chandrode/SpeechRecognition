@@ -1,3 +1,4 @@
+from typing import Any
 import torch
 import torchaudio
 from model import SpeechModel
@@ -5,10 +6,11 @@ from dataset import Data, Padding ,createMelSpec
 from torch.utils.data import DataLoader
 from AudioTransform import AudioUtil
 from decoder import CTCBeamDecoder
-import pyaudio    # conda install -c anaconda pyaudio -> used this to install pyaudion
+import pyaudio    # conda install -c anaconda pyaudio -> used this to install pyaudio
 import wave
 import time
 import threading
+import argparse
 
 
 class Listen():
@@ -54,6 +56,7 @@ class SpeechListner():
         self.beam = ""
         self.out_arg = None
         self.beam_result = CTCBeamDecoder(beam_size=100, kenlm_path=kenlm_file)
+        self.context_length = context_length * 50
 
     def save(self,waveforms,file_name):
         wf = wave.open(file_name,'wb')
@@ -75,48 +78,54 @@ class SpeechListner():
             out,_ = self.Testmodel(logMel,self.hidden)
             out = torch.argmax(out, dim = 2)
             self.out_arg = out  if self.out_arg is None else torch.cat((self.out_arg,out),dim=1)
-
-            self.out_arg.squeeze(0)
-            self.out_arg = self.out_arg.transpose(0,1)
-
             
+            self.out_arg.squeeze(0)
+            results = self.beam_result(self.out_arg)
+            current_context_length = self.out_arg.shape[1] / 50 
+            if self.out_arg.shape[1] > self.context_length:
+                self.out_arg = None
+            return results, current_context_length
 
+    def infernce(self, action):
+        while True:
+            if len(self.audio_list) < 5:
+                continue
+            else:
+                pred_list = self.audio_list.copy()
+                self.audio_list.clear()
+                action(self.predict(pred_list))
+            time.sleep(0.05)
 
+    def run(self,action):
+        self.listner.run(self.audio_list)
+        thread = threading.Thread(target=self.infernce,args=(action,),daemon=True)
+        thread.start()
 
+    
+class DemoAction():
+    def __init__(self):
+        self.asr_result = ""
+        self.current_beam = ""
 
+    def __call__(self,x):
+        results, current_context_len = x
+        self.current_beam = results
+        transcript = " ".join(self.asr_result + results.split())
+        print(transcript)
+        if current_context_len > 10:
+            self.asr_result = transcript
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description= "Testing Speech Recognition System")
+    parser.add_argument("--model_path_ckpt",type=str,default=None, required=True, 
+                        help="Enter the checkpoint path for the model")
+    parser.add_argument("--kenlm_path",type= str, default=None, required=False,
+                         help= "Path to your language model" )
+    
+    args = parser.parse_args()
 
+    asr_engine = SpeechListner(args.model_path_ckpt, args.kenlm_path)
+    action = DemoAction()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ok = Data('save_json/test.json',sample_rate=16000,time_mask=80,freq_mask=15)
-# # print(ok.__getitem__(1))
-# batch = ok.__getitem__(3)
-# spectrograms,label ,spec_len ,label_len = batch
-# h0,c0 = Testmodel.hidden_initialize(1)
-# out,_ = Testmodel(spectrograms,(h0,c0))
-# Decoder_obj = CTCBeamDecoder()
-# print(out.shape)
-# out = out.squeeze(0)
-# print(out.shape)
-# text = Decoder_obj.deconding(out)
-# print(text)
+    asr_engine.run(action = action)
+    threading.Event.wait()
