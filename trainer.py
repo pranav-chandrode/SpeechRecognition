@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam, lr_scheduler
 import torch.nn.functional as F
-from pytorch_lightning.core.lightning import LightningModule
+# from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.core.module import LightningModule
 from model import SpeechModel
 from dataset import Data, Padding
 from torch.utils.data import DataLoader
@@ -10,7 +11,6 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import Trainer
 from argparse import ArgumentParser
-
 import sys
 sys.setrecursionlimit(10000)
 

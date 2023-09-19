@@ -48,6 +48,7 @@ class CTCBeamDecoder:
 
     def __call__(self, output):
         beam_results, beam_scores, timesteps, out_seq_len = self.decoder.decode(output)
+        print("decoding!!!")
         return self.convert_to_string(beam_results[0][0],labels, out_seq_len[0][0])
         # # output.squeeze(0)
         # # output = output.transpose(0,1)

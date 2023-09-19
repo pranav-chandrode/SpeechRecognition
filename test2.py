@@ -72,14 +72,45 @@
 # a = F.softmax(a,dim=1)
 # print(a)
 
-import torchaudio
+# import torchaudio
 
-transform  = torchaudio.transforms.TimeMasking(time_mask_param=28)
-transform2 = torchaudio.transforms.FrequencyMasking(freq_mask_param= 20)
+# transform  = torchaudio.transforms.TimeMasking(time_mask_param=28)
+# transform2 = torchaudio.transforms.FrequencyMasking(freq_mask_param= 20)
 
-wave, _ = torchaudio.load("dest_wav_file/84-121123-0000.wav")
+# wave, _ = torchaudio.load("dest_wav_file/84-121123-0000.wav")
 
-print(wave.shape)
-wave = transform(wave)
-wave = transform2(wave)
-print(wave.shape)
+# print(wave.shape)
+# wave = transform(wave)
+# wave = transform2(wave)
+# print(wave.shape)
+
+import dataset 
+from model import SpeechModel
+import torch
+from decoder import CTCBeamDecoder
+
+dataObj = dataset.Data(json_file= "save_json/train.json",sample_rate=16000,time_mask=25,freq_mask=65)
+
+batch = dataObj.__getitem__(1)
+spectrogram,label,spectrogram_len,label_len = batch
+
+print(spectrogram.shape)
+
+h_para = SpeechModel.hyper_parameters
+Speech = SpeechModel(**h_para)
+# print(modelObj)
+checkpointPath = "speech_logger/Speech_loggs/version_8/checkpoints/epoch=1-step=75.ckpt"
+checkpoint = torch.load(checkpointPath)
+Speech.load_state_dict(checkpoint['state_dict'],strict=False)
+
+
+hidden = Speech.hidden_initialize(1)
+out, _ = Speech(spectrogram,hidden)
+print(out.shape)
+
+
+decoder = CTCBeamDecoder()
+text = decoder(out)
+print(len(text))
+print(text)
+# print(Speech)
