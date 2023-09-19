@@ -107,8 +107,6 @@ Speech.load_state_dict(checkpoint['state_dict'],strict=False)
 hidden = Speech.hidden_initialize(1)
 out, _ = Speech(spectrogram,hidden)
 print(out.shape)
-
-
 decoder = CTCBeamDecoder()
 text = decoder(out)
 print(len(text))

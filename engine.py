@@ -69,17 +69,22 @@ class SpeechListner():
     
     def predict(self, audio):
         with torch.no_grad():
-            fname = self.save(audio)
+            fname = self.save(audio,"Audio.wav")
             waveform , _ = torchaudio.load(fname)
+            print(f"waveform  shape = {waveform.shape}")
             waveform = self.AudioTrucPad.trunc(wave=waveform)
             waveform = self.AudioTrucPad.padder(wave=waveform)
 
             logMel = self.LogMelCreater(waveform)
             out,_ = self.Testmodel(logMel,self.hidden)
-            out = torch.argmax(out, dim = 2)
+            print(f"out shape = {out.shape}")
+            # out = torch.argmax(out, dim = 2)
+            # print(f"out shape = {out.shape}")
             self.out_arg = out  if self.out_arg is None else torch.cat((self.out_arg,out),dim=1)
-            
-            self.out_arg.squeeze(0)
+            print(self.out_arg.shape)
+            # self.out_arg.squeeze(0)
+            print(self.out_arg.shape)
+            # self.out_arg = self.out_arg.transpose(0,1)
             results = self.beam_result(self.out_arg)
             current_context_length = self.out_arg.shape[1] / 50 
             if self.out_arg.shape[1] > self.context_length:
@@ -110,7 +115,10 @@ class DemoAction():
     def __call__(self,x):
         results, current_context_len = x
         self.current_beam = results
-        transcript = " ".join(self.asr_result + results.split())
+        # print(f"result type = {type(results)}")
+        # print(f"asr_result type = {type(self.asr_result)}")
+        transcript = "".join(str(self.asr_result) + str(results.split()))
+        print("printing transcript !!!")
         print(transcript)
         if current_context_len > 10:
             self.asr_result = transcript
@@ -128,4 +136,5 @@ if __name__ == "__main__":
     action = DemoAction()
 
     asr_engine.run(action = action)
-    threading.Event.wait()
+    obj = threading.Event()
+    obj.wait()
