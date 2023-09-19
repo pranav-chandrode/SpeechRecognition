@@ -1,6 +1,7 @@
 from utils import TextProcess
 import ctcdecode
 
+
 textprocess = TextProcess()
 
 labels = [
