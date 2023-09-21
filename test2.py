@@ -84,10 +84,14 @@
 # wave = transform2(wave)
 # print(wave.shape)
 
+
+
+
 import dataset 
 from model import SpeechModel
 import torch
-from decoder import CTCBeamDecoder
+from decoder import Pyctcdecoder
+
 
 dataObj = dataset.Data(json_file= "save_json/train.json",sample_rate=16000,time_mask=25,freq_mask=65)
 
@@ -107,8 +111,14 @@ Speech.load_state_dict(checkpoint['state_dict'],strict=False)
 hidden = Speech.hidden_initialize(1)
 out, _ = Speech(spectrogram,hidden)
 print(out.shape)
-decoder = CTCBeamDecoder()
+# decoder = CTCBeamDecoder()
+decoder = Pyctcdecoder()
 text = decoder(out)
 print(len(text))
 print(text)
 # print(Speech)
+
+
+
+
+

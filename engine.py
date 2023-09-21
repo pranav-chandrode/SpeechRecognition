@@ -13,6 +13,7 @@ import threading
 import argparse
 
 
+
 class Listen():
     def __init__(self,sample_rate = 16000,record_time = 2):
         self.sample_rate = sample_rate
