@@ -82,6 +82,7 @@ class SpeechModel(nn.Module):
     def forward(self,x,hidden):
         """Input size was [batch,1,64,6001] so we have squeeze this"""
         x = x.squeeze(1)              # [batch,64,6001]
+        print(f"Initial shape = {x.shape}")      # [batch,64,1202]
         x = F.gelu(self.cnn(x))
         print(f"shape after cnn = {x.shape}")      # [batch,64,1202]
         # x = x.view(x.size(0),-1)

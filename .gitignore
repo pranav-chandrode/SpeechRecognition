@@ -11,3 +11,5 @@ ok.ipynb
 extra_15_wav_files.txt
 lightning_logs
 __pycache__
+3-gram.pruned.1e-7.arpa
+test3.py
