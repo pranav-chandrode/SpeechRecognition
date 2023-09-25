@@ -2,7 +2,7 @@ LibriSpeech
 save_json
 dest_wav_file
 test.py
-test2.py
+# test2.py
 testNotebook.ipynb
 speech_logger
 saved_model
@@ -11,5 +11,9 @@ ok.ipynb
 extra_15_wav_files.txt
 lightning_logs
 __pycache__
-3-gram.pruned.1e-7.arpa
 test3.py
+.vscode
+test.cpp
+a.out
+test3.py
+3-gram.pruned.1e-7.arpa

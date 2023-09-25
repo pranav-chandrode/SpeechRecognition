@@ -84,7 +84,7 @@ class SpeechModel(nn.Module):
         x = x.squeeze(1)              # [batch,64,6001]
         print(f"Initial shape = {x.shape}")      # [batch,64,1202]
         x = F.gelu(self.cnn(x))
-        print(f"shape after cnn = {x.shape}")      # [batch,64,1202]
+        # print(f"shape after cnn = {x.shape}")      # [batch,64,1202]
         # x = x.view(x.size(0),-1)
         # x = torch.max(x, dim=2)[0]
         x = F.gelu(self.dense(x))    # [batch, 64,64] 

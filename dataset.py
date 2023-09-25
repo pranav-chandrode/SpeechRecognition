@@ -15,7 +15,9 @@ class SpecAugment(nn.Module):
     def __init__(self,time_mask,freq_mask):
         super(SpecAugment,self).__init__()
         self.transform  = nn.Sequential(torchaudio.transforms.FrequencyMasking(freq_mask_param=freq_mask),
-                                        torchaudio.transforms.TimeMasking(time_mask_param=time_mask))
+                                        )
+        # self.transform  = nn.Sequential(torchaudio.transforms.FrequencyMasking(freq_mask_param=freq_mask),
+        #                                 torchaudio.transforms.TimeMasking(time_mask_param=time_mask))
         
     def forward(self,x):
         return self.transform(x)

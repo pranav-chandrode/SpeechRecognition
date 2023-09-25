@@ -5,12 +5,14 @@ from model import SpeechModel
 from dataset import Data, Padding ,createMelSpec
 from torch.utils.data import DataLoader
 from AudioTransform import AudioUtil
-from decoder import CTCBeamDecoder
+# from decoder import CTCBeamDecoder
+from decoder import Pyctcdecoder
 import pyaudio    # conda install -c anaconda pyaudio -> used this to install pyaudio
 import wave
 import time
 import threading
 import argparse
+
 
 
 class Listen():
@@ -26,7 +28,7 @@ class Listen():
     
     def reader(self,frames):
         while True:
-            data = self.stream.read(self.CHUNK,exception_on_overflow=False)
+            data = self.stream.read(self.CHUNK,exception_on_overflow=True)
             frames.append(data)
             time.sleep(0.01)
         
@@ -55,7 +57,8 @@ class SpeechListner():
         self.hidden = self.Testmodel.hidden_initialize(1)
         self.beam = ""
         self.out_arg = None
-        self.beam_result = CTCBeamDecoder(beam_size=100, kenlm_path=kenlm_file)
+        # self.beam_result = CTCBeamDecoder(beam_size=100, kenlm_path=kenlm_file)
+        self.beam_result = Pyctcdecoder(kenlm_model_path=kenlm_file)
         self.context_length = context_length * 50
 
     def save(self,waveforms,file_name):
@@ -69,17 +72,21 @@ class SpeechListner():
     
     def predict(self, audio):
         with torch.no_grad():
-            fname = self.save(audio)
+            fname = self.save(audio,"Audio.wav")
             waveform , _ = torchaudio.load(fname)
+            print(f"waveform  shape = {waveform.shape}")
             waveform = self.AudioTrucPad.trunc(wave=waveform)
             waveform = self.AudioTrucPad.padder(wave=waveform)
 
             logMel = self.LogMelCreater(waveform)
             out,_ = self.Testmodel(logMel,self.hidden)
-            out = torch.argmax(out, dim = 2)
+            # print(f"out shape = {out.shape}")
+            # out = torch.argmax(out, dim = 2)
+            # print(f"out shape = {out.shape}")
             self.out_arg = out  if self.out_arg is None else torch.cat((self.out_arg,out),dim=1)
-            
-            self.out_arg.squeeze(0)
+            print(f"self.out_arg.shape = {self.out_arg.shape}")
+            # self.out_arg.squeeze(0)
+            # self.out_arg = self.out_arg.transpose(0,1)
             results = self.beam_result(self.out_arg)
             current_context_length = self.out_arg.shape[1] / 50 
             if self.out_arg.shape[1] > self.context_length:
@@ -110,8 +117,13 @@ class DemoAction():
     def __call__(self,x):
         results, current_context_len = x
         self.current_beam = results
-        transcript = " ".join(self.asr_result + results.split())
-        print(transcript)
+        # print(f"result type = {type(results)}")
+        # print(f"asr_result type = {type(self.asr_result)}")
+        print(f"results = {results}")
+        print(f"self.asr = {self.asr_result}")
+        transcript = "".join(self.asr_result.split() + results.split())
+        print("printing transcript !!!")
+        print(f"transcript = {transcript}")
         if current_context_len > 10:
             self.asr_result = transcript
 
@@ -128,4 +140,6 @@ if __name__ == "__main__":
     action = DemoAction()
 
     asr_engine.run(action = action)
-    threading.Event.wait()
+    threading.Event().wait()
+    # obj = threading.Event()
+    # obj.wait()
