@@ -119,10 +119,9 @@ class DemoAction():
         self.current_beam = results
         # print(f"result type = {type(results)}")
         # print(f"asr_result type = {type(self.asr_result)}")
-        transcript = "".join(str(self.asr_result) + str(results.split()))
         print(f"results = {results}")
         print(f"self.asr = {self.asr_result}")
-        # transcript = "".join(self.asr_result + results.split())
+        transcript = "".join(self.asr_result.split() + results.split())
         print("printing transcript !!!")
         print(f"transcript = {transcript}")
         if current_context_len > 10:
