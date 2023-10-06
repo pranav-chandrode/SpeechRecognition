@@ -39,22 +39,27 @@ class Listen():
 
 
 class SpeechListner():
-    def __init__(self,checkpoint_path,kenlm_file,context_length = 10):
+    def __init__(self,model_file,kenlm_file,context_length = 10):
 
-        h_param = SpeechModel.hyper_parameters
-        self.Testmodel = SpeechModel(**h_param)
-        # checkpoint_path = r"speech_logger\\Speech_loggs\\version_8\\checkpoints\\epoch=1-step=75.ckpt"
+        # h_param = SpeechModel.hyper_parameters
+        # self.Testmodel = SpeechModel(**h_param)
+        # # checkpoint_path = r"speech_logger\\Speech_loggs\\version_8\\checkpoints\\epoch=1-step=75.ckpt"
 
-        model_state_dict = torch.load(checkpoint_path)['state_dict']
-        self.Testmodel.load_state_dict(model_state_dict,strict=False)  
-        # donot use strict= False this may lead tp wrong predicitons
-        # solutions :- https://discuss.pytorch.org/t/solved-keyerror-unexpected-key-module-encoder-embedding-weight-in-state-dict/1686/13 
-        self.Testmodel.eval().to('cpu')
+        # model_state_dict = torch.load(checkpoint_path)['state_dict']
+        # self.Testmodel.load_state_dict(model_state_dict,strict=False)  
+        # # donot use strict= False this may lead tp wrong predicitons
+        # # solutions :- https://discuss.pytorch.org/t/solved-keyerror-unexpected-key-module-encoder-embedding-weight-in-state-dict/1686/13 
+        # self.Testmodel.eval().to('cpu')
+
+        self.Testmodel = torch.jit.load(model_file)
+
         self.listner = Listen()
         self.audio_list = list()
         self.AudioTrucPad = AudioUtil()
         self.LogMelCreater = createMelSpec(16000)
-        self.hidden = self.Testmodel.hidden_initialize(1)
+        # self.hidden = self.Testmodel.hidden_initialize(1)
+        hpara  = SpeechModel.hyper_parameters
+        self.hidden = SpeechModel(**hpara).hidden_initialize(1)
         self.beam = ""
         self.out_arg = None
         # self.beam_result = CTCBeamDecoder(beam_size=100, kenlm_path=kenlm_file)
@@ -129,14 +134,14 @@ class DemoAction():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description= "Testing Speech Recognition System")
-    parser.add_argument("--model_path_ckpt",type=str,default=None, required=True, 
+    parser.add_argument("--model_file_path",type=str,default=None, required=True, 
                         help="Enter the checkpoint path for the model")
     parser.add_argument("--kenlm_path",type= str, default=None, required=False,
                          help= "Path to your language model" )
     
     args = parser.parse_args()
 
-    asr_engine = SpeechListner(args.model_path_ckpt, args.kenlm_path)
+    asr_engine = SpeechListner(args.model_file_path, args.kenlm_path)
     action = DemoAction()
 
     asr_engine.run(action = action)

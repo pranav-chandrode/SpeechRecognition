@@ -126,21 +126,6 @@ def main(args):
     
     trainer.fit(speech_module)
 
-    # checkpoint_path = checkpoint_callback(args).kth_best_model_path
-
-    # checkpoint_path = r"speech_logger\\Speech_loggs\\version_8\\checkpoints\\epoch=1-step=75.ckpt"
-    # print(f"checkpoint_path = {checkpoint_path}")
-    
-    # model_state_dict = torch.load(checkpoint_path)['state_dict']
-    # # print(model_state_dict)
-
-    # scripted_model = torch.jit.script(model_state_dict)
-    # # print(scripted_model)
-    # save_scripted_model_path  = 'saved_model/scripted_model.pt'
-    # # scripted_model.save(save_scripted_model_path)
-    # torch.save(scripted_model,save_scripted_model_path)
-    # torch.jit.save(scripted_model,'saved_model/scripted_model.pt')
-
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('--train_file', default= None, required= True,type= str, help="Enter the training json file path")
