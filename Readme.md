@@ -4,7 +4,7 @@
 - Create a directory (dest_wav_file in my case), where all the audio .wav files will be stored. This .wav files will be used for training the model(Acoustic model).
 - Additionaly I create 2 (train.json & test.json) json files that will contain a `key`:- "location of the .wav file" and `text`:- "text content of the .wav file".
 
-The Preperation for training has been completed, now let's heat up the system...
+The Preperation for training has been completed, now let's train the model...
 
 2. Run `trainer.py` with required argument.
 This will train the model for the given training data set and save the model checkpoints in the provided directory.
